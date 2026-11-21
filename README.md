@@ -33,7 +33,7 @@ scripts/build-all.sh          Build and record all outputs
 scripts/publish-cache.sh      Sign and upload runtime closures to AWS S3
 .github/workflows/build.yml   PR validation and trusted-main publication
 tests/                       Local build and signed-cache integration tests
-docs/                        Development, AWS/GitHub, and NixOS setup
+docs/setup.md                Complete ordered setup and operations guide
 ```
 
 Add `packages/my-tool/package.nix` and stage it in Git. Discovery exports
@@ -52,9 +52,9 @@ Consumers add this repository as a flake input and trust its signing public key,
 then download from `https://BUCKET_NAME.s3.REGION.amazonaws.com` without AWS
 credentials. Keep the repository's independent nixpkgs pin to obtain cache hits.
 
-- [Local development and tests](docs/development.md)
-- [AWS provisioning, GitHub configuration, and publication verification](docs/aws-setup.md)
-- [NixOS integration, updates, and troubleshooting](docs/nixos-integration.md)
+Follow the [complete step-by-step setup guide](docs/setup.md), from local builds
+through AWS/GitHub configuration to NixOS installation and verification.
+
 - [Implementation progress and validation limits](IMPLEMENTATION-PLAN.md)
 
 Local builds and signed file-cache tests have passed. Live AWS publication and

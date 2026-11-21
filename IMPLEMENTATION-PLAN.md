@@ -50,7 +50,7 @@ Validation passed: Bash syntax, ShellCheck, real builds of Hello and Peek, and
 temporary-flake integration tests covering discovery, hyphenated names, all
 outputs, repeated execution, addition/removal, ignored entries, empty sets,
 unsupported systems, build/evaluation failures, temporary-file cleanup, and a
-custom manifest path. Usage and requirements are in `docs/development.md`.
+custom manifest path. Usage and requirements are in `docs/setup.md`.
 
 ## Publishing and CI
 
@@ -61,7 +61,7 @@ that key on exit, and recursively copies runtime closures with multipart uploads
 PRs and non-main manual runs only validate/build; main pushes and main manual
 runs validate/build/publish using the main-restricted `nix-cache` environment.
 Credentials are scoped to the final publishing step. Environment protection and
-AWS provisioning are manual prerequisites documented in `docs/aws-setup.md`.
+AWS provisioning are manual prerequisites documented in `docs/setup.md`.
 
 Passed locally: all four build tests, all four publishing tests, shell syntax,
 ShellCheck, actionlint, and workflow event/ref condition checks. Publishing tests
@@ -76,7 +76,7 @@ and verification remain pending resources and credentials.
 ## Operational documentation
 
 Step 4's local documentation is complete: the README provides the package/build
-overview, and `docs/nixos-integration.md` covers an existing host's flake input,
+overview, and `docs/setup.md` covers an existing host's flake input,
 independent pinning, cache settings, package updates, troubleshooting, and safe
 isolated-store verification. The development guide also documents installation
 and local tooling.
@@ -89,6 +89,12 @@ Bash snippet syntax, and a final `nix flake check` passed.
 
 External setup remains pending: there is no Git remote configured, no connected
 GitHub/AWS tool, and no publication environment configuration. Follow
-`docs/aws-setup.md` to provision the dedicated bucket/IAM user, establish trusted
+`docs/setup.md` to provision the dedicated bucket/IAM user, establish trusted
 main, configure the GitHub environment, publish, and verify live HTTPS
 substitution. No live publication or deployment is claimed.
+
+## Consolidated guide
+
+All setup and development instructions now live in `docs/setup.md`, ordered from
+local builds through AWS, GitHub, publication checks, and NixOS consumption.
+The former split guides have been removed. The README links to the single guide.

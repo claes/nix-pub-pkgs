@@ -130,9 +130,7 @@ nix-packages/
 │   └── publish-cache.sh
 │
 ├── docs/
-│   ├── aws-setup.md
-│   ├── nixos-integration.md
-│   └── development.md
+│   └── setup.md
 │
 └── .github/
     └── workflows/
@@ -613,10 +611,10 @@ All builds must be driven through the package discovery mechanism and build scri
 
 ## 9. AWS setup documentation
 
-Create:
+Include the following AWS steps in the consolidated guide:
 
 ```text
-docs/aws-setup.md
+docs/setup.md
 ```
 
 This must be a detailed, self-contained guide for manually provisioning the required AWS infrastructure.
@@ -877,10 +875,10 @@ Document:
 
 ## 10. NixOS integration documentation
 
-Create:
+Include the following consumer steps in the same consolidated guide:
 
 ```text
-docs/nixos-integration.md
+docs/setup.md
 ```
 
 This should explain how to use the package repository from an entirely separate NixOS configuration flake.
@@ -1049,10 +1047,10 @@ Provide commands and explanations rather than only a list of possible causes.
 
 ## 11. Local development documentation
 
-Create:
+Include local development in the same consolidated guide:
 
 ```text
-docs/development.md
+docs/setup.md
 ```
 
 Document the following.
@@ -1137,7 +1135,7 @@ It should contain:
 
 Keep the README concise.
 
-Put detailed setup instructions in the appropriate `docs/` files rather than duplicating them.
+Put all detailed setup, development, and NixOS instructions in one ordered `docs/setup.md` guide rather than splitting them across documents.
 
 ---
 
