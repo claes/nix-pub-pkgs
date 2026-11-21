@@ -6,3 +6,4 @@
 *.swp
 .build/
 .direnv/
+__pycache__/

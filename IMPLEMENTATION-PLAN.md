@@ -12,8 +12,8 @@ The Nix implementation and its local build acceptance checks are the gate before
 Step 1 is complete. Local validation passed: `nix flake show`, `nix flake check`,
 `nix build .#hello`, the `Hello, world!` greeting, and the exact build-info
 contents. Both the derivation and output paths differ from standard Hello evaluated
-with the same locked nixpkgs input. Step 2 is next; GitHub Actions and S3 work have
-not started.
+with the same locked nixpkgs input. Step 2 is now complete; GitHub Actions and S3
+work have not started.
 
 ## Package layout revision
 
@@ -38,3 +38,16 @@ Standalone derivation validation passed: `nix flake check`, `nix build .#hello`,
 the usual greeting, and exact custom metadata contents. The upstream suite reports
 6 passed, 1 skipped, 0 failed, and 0 errors. The new output is
 `/nix/store/znw97y72lmdl5bxdykh59f0if15w3kzr-hello-2.12.3`.
+
+## Local build automation
+
+`scripts/build-all.sh` discovers flake outputs for `SYSTEM` (default
+`x86_64-linux`), builds all outputs in one invocation, and writes deduplicated
+store paths to `.build/store-paths` (configurable with `OUTPUTS_FILE`). It removes
+stale manifests before running, handles empty package sets, and never publishes.
+
+Validation passed: Bash syntax, ShellCheck, real builds of Hello and Peek, and
+temporary-flake integration tests covering discovery, hyphenated names, all
+outputs, repeated execution, addition/removal, ignored entries, empty sets,
+unsupported systems, build/evaluation failures, temporary-file cleanup, and a
+custom manifest path. Usage and requirements are in `docs/development.md`.
