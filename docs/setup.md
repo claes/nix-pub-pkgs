@@ -23,7 +23,7 @@ checks remain for you to perform against your own resources.
 5. [Create the IAM publisher and access keys](#5-create-the-iam-publisher-and-access-keys)
 6. [Generate the Nix signing key](#6-generate-the-nix-signing-key)
 7. [Configure GitHub publication settings](#7-configure-github-publication-settings)
-8. [Push main and run the workflow](#8-push-main-and-run-the-workflow)
+8. [Push master and run the workflow](#8-push-master-and-run-the-workflow)
 9. [Verify the published cache](#9-verify-the-published-cache)
 10. [Configure the NixOS consumer](#10-configure-the-nixos-consumer)
 11. [Install and verify on NixOS](#11-install-and-verify-on-nixos)
@@ -102,18 +102,17 @@ git branch --show-current
 git remote -v
 ```
 
-If the branch is still `master`, rename it. If no `origin` exists, add the empty
+Keep the existing `master` branch. If no `origin` exists, add the empty
 GitHub repository (use your actual owner and repository name):
 
 ```bash
-git branch -m main
 git remote add origin git@github.com:YOUR_USER/nix-packages.git
 ```
 
 Run each change only if needed. If using HTTPS instead of SSH, use
 `https://github.com/YOUR_USER/nix-packages.git` and your configured GitHub credentials.
 Do not push yet: first configure AWS and GitHub secrets in steps 4–7 so the first
-main push can publish successfully.
+master push can publish successfully.
 
 ## 4. Create the public-read S3 bucket
 
@@ -232,8 +231,10 @@ key does not automatically re-sign already uploaded entries.
 
 Open **Repository → Settings → Environments → New environment**, create
 `nix-cache`, and choose **Deployment branches and tags → Selected branches and
-tags**. Add a **branch** rule for exactly `main`, with no tag rule. This restriction
-protects environment secrets even if a different branch changes its workflow.
+tags**. Add a **branch** rule for exactly `master`, with no tag rule. If `nix-cache`
+already exists, edit its deployment branch rules from `main` to `master` and save.
+This restriction protects environment secrets even if a different branch changes
+its workflow.
 Under this environment's secrets add the three secret values below; do not also
 store publication secrets as broadly available repository secrets.
 
@@ -256,27 +257,27 @@ flakes and nix-command. Native S3 support is checked before publishing; AWS CLI
 is not needed by CI. The Cachix action installs Nix only; no Cachix hosting is used.
 
 PRs and manual runs on other branches validate and build without publication
-secrets. Main pushes and main manual runs validate, build all packages, then
+secrets. Master pushes and master manual runs validate, build all packages, then
 publish in the same job. A failed step prevents publication. Builds run without
 AWS or signing environment variables; only the publishing step receives them.
 
-## 8. Push main and run the workflow
+## 8. Push master and run the workflow
 
 After steps 4–7, return to the package repository. Commit any remaining reviewed
 changes, then push:
 
 ```bash
 git status
-git push -u origin main
+git push -u origin master
 ```
 
-On GitHub, select `main` as the default branch under repository settings and
-protect changes to main and workflow files. Open **Actions → Build and publish
+On GitHub, select `master` as the default branch under repository settings and
+protect changes to master and workflow files. Open **Actions → Build and publish
 packages** and wait for validation, package builds, and publication to succeed.
 Keep the commit hash of the successful run for the verification below.
 
 To run manually, open **Actions → Build and publish packages → Run workflow**,
-choose **main**, and run. The workflow must first exist on the default branch for
+choose **master**, and run. The workflow must first exist on the default branch for
 the button to appear. No external GitHub workflow run has been performed during
 local validation.
 
@@ -288,7 +289,7 @@ Uploads use authenticated
 `https://my-nix-binary-cache.s3.eu-north-1.amazonaws.com`.
 Use the bucket's real region; do not use S3 website endpoints.
 
-After a successful main publication, from the package repository checked out at the same commit as the successful workflow:
+After a successful master publication, from the package repository checked out at the same commit as the successful workflow:
 
 ```bash
 export AWS_REGION=eu-north-1
@@ -340,7 +341,7 @@ A network error is not evidence of access denial.
 missing object when anonymous listing is denied. Check authenticated object
 existence with `aws s3api head-object --bucket "$S3_BUCKET" --key KEY --profile
 nix-cache-publisher`. A missing `nix-cache-info` means publication has not completed
-or the endpoint is wrong. Check region, bucket, main workflow logs, and IAM policy.
+or the endpoint is wrong. Check region, bucket, master workflow logs, and IAM policy.
 Incorrect signatures require matching consumer keys and the exact package revision.
 
 ## 10. Configure the NixOS consumer
@@ -502,7 +503,7 @@ Commit `flake.lock` with the update.
 
 ### Publish and consume a new revision
 
-1. Change a package definition in the package repository and push to trusted `main`.
+1. Change a package definition in the package repository and push to trusted `master`.
 2. Wait for CI to build and publish successfully.
 3. In the separate NixOS repository, run `nix flake update my-packages`.
 4. Review and commit its lock file, rebuild the host, and inspect substitution logs.

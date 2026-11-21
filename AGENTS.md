@@ -44,7 +44,7 @@ These decisions are final and must be followed.
 - Initially support `x86_64-linux`.
 - The NixOS system configuration itself is not built in this repository.
 - Pull requests validate builds without publishing anything.
-- Pushes to `main` build and publish packages.
+- Pushes to `master` build and publish packages.
 
 ### Storage
 
@@ -508,7 +508,7 @@ Implement:
 The workflow must support:
 
 - Pull requests.
-- Pushes to `main`.
+- Pushes to `master`.
 - Manual execution using `workflow_dispatch`.
 
 ### Build job
@@ -550,7 +550,7 @@ Do not use a privileged `pull_request_target` workflow to run untrusted package 
 
 ### Main branch
 
-On pushes to `main`:
+On pushes to `master`:
 
 1. Check out the source.
 2. Install Nix.
@@ -566,7 +566,7 @@ Publishing must occur only after successful validation and builds.
 
 Do not allow arbitrary untrusted refs to access publishing secrets.
 
-Prefer publishing only from `main`.
+Prefer publishing only from `master`.
 
 ### GitHub secrets
 
@@ -995,7 +995,7 @@ Also show how to inspect the custom build-information file.
 Document the intended release process:
 
 1. Update a package in the custom package repository.
-2. Commit and push to `main`.
+2. Commit and push to `master`.
 3. GitHub Actions builds the new package output.
 4. GitHub Actions uploads the binary cache artifacts to S3.
 5. Update the `my-packages` flake input in the NixOS configuration.
@@ -1224,7 +1224,7 @@ Validate the workflow YAML.
 Verify its conditions ensure:
 
 - Pull requests build without publishing.
-- Pushes to `main` publish.
+- Pushes to `master` publish.
 - Manual publishing cannot expose secrets to arbitrary untrusted refs.
 - Publishing is skipped when builds fail.
 - All package outputs are discovered automatically.
@@ -1273,7 +1273,7 @@ The project is complete only when the following conditions are met.
 ### GitHub Actions
 
 - [ ] Pull requests validate builds.
-- [ ] Pushes to `main` build and publish.
+- [ ] Pushes to `master` build and publish.
 - [ ] `workflow_dispatch` exists.
 - [ ] AWS credentials are provided through secrets.
 - [ ] AWS credentials are not available to PR validation.
@@ -1427,7 +1427,7 @@ The final system must support this workflow without any manual package enumerati
 
 1. A developer adds `packages/<name>/package.nix`.
 2. The flake automatically exposes it.
-3. The developer commits and pushes to `main`.
+3. The developer commits and pushes to `master`.
 4. GitHub Actions discovers and builds all custom packages.
 5. GitHub Actions signs and uploads the resulting store paths to AWS S3.
 6. An existing NixOS flake consumes the package repository as an input.

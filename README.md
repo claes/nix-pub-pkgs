@@ -31,7 +31,7 @@ flake.nix / flake.lock        Independent nixpkgs pin and discovery
 packages/<name>/package.nix   One derivation per package directory
 scripts/build-all.sh          Build and record all outputs
 scripts/publish-cache.sh      Sign and upload runtime closures to AWS S3
-.github/workflows/build.yml   PR validation and trusted-main publication
+.github/workflows/build.yml   PR validation and trusted-master publication
 tests/                       Local build and signed-cache integration tests
 docs/setup.md                Complete ordered setup and operations guide
 ```
@@ -42,10 +42,10 @@ no flake registry or workflow changes.
 
 ## CI and consumption
 
-PRs validate and build without publishing credentials. Pushes to `main` and manual
-runs on `main` validate, build, then publish with a private Nix signing key and
+PRs validate and build without publishing credentials. Pushes to `master` and manual
+runs on `master` validate, build, then publish with a private Nix signing key and
 dedicated IAM access keys. Other manual refs build only. Configure the protected
-`nix-cache` GitHub environment before publishing; this checkout began on `master`.
+`nix-cache` GitHub environment with `master` allowed before publishing.
 
 The S3 bucket stores standard `nix-cache-info`, narinfo metadata, and NAR objects.
 Consumers add this repository as a flake input and trust its signing public key,

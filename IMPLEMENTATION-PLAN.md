@@ -2,7 +2,7 @@
 
 1. **Build the Nix foundation first.** Add an independently pinned flake, automatic discovery of `packages/<name>/package.nix`, and a customized GNU Hello derivation. Validate flake evaluation, build Hello, run it, check its metadata, and confirm its derivation and output differ from nixpkgs Hello.
 2. **Add local build automation.** Implement a build-all script that discovers packages from JSON flake outputs, builds every output, writes all resulting store paths to a manifest, and handles empty sets and failures. Exercise package addition/removal and output handling locally.
-3. **Add publishing and CI.** Once local builds pass, implement signed native Nix S3 publishing and the GitHub Actions validation/build/publish workflow. Keep publishing secrets unavailable to pull requests and restrict publication to main.
+3. **Add publishing and CI.** Once local builds pass, implement signed native Nix S3 publishing and the GitHub Actions validation/build/publish workflow. Keep publishing secrets unavailable to pull requests and restrict publication to master.
 4. **Document and configure operations.** Write development, AWS, and NixOS integration guides; then provision AWS and configure GitHub only after the build and publish code is ready. Verify uploaded metadata, signatures, public reads, and substitution where credentials and infrastructure are available.
 
 The Nix implementation and its local build acceptance checks are the gate before GitHub Actions or S3 work begins.
@@ -58,8 +58,8 @@ Step 3 is implemented. `scripts/publish-cache.sh` validates the manifest and
 configuration, signs native S3 cache entries using a 0600 temporary key, removes
 that key on exit, and recursively copies runtime closures with multipart uploads.
 `.github/workflows/build.yml` installs pinned Nix 2.34.9 through pinned actions.
-PRs and non-main manual runs only validate/build; main pushes and main manual
-runs validate/build/publish using the main-restricted `nix-cache` environment.
+PRs and non-master manual runs only validate/build; master pushes and master manual
+runs validate/build/publish using the master-restricted `nix-cache` environment.
 Credentials are scoped to the final publishing step. Environment protection and
 AWS provisioning are manual prerequisites documented in `docs/setup.md`.
 
@@ -69,8 +69,7 @@ use a local test shim and real Nix binary-cache signing, recursive copying,
 repeat copying, key cleanup, and signature-checked restoration into an isolated
 store. No live S3 uploads, public HTTPS reads, IAM tests, or GitHub runs were
 performed: all five publication environment variables are absent locally.
-The current branch is `master`; operators must establish trusted `main` before
-publication. Consumer documentation and the README are now complete; live setup
+The repository uses trusted branch `master` for publication. Consumer documentation and the README are now complete; live setup
 and verification remain pending resources and credentials.
 
 ## Operational documentation
@@ -90,7 +89,7 @@ Bash snippet syntax, and a final `nix flake check` passed.
 External setup remains pending: there is no Git remote configured, no connected
 GitHub/AWS tool, and no publication environment configuration. Follow
 `docs/setup.md` to provision the dedicated bucket/IAM user, establish trusted
-main, configure the GitHub environment, publish, and verify live HTTPS
+configure the GitHub environment for `master`, publish, and verify live HTTPS
 substitution. No live publication or deployment is claimed.
 
 ## Consolidated guide
