@@ -1,0 +1,75 @@
+name: Build and publish packages
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    if: github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/main')
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: cachix/install-nix-action@bb0495a1086c46893eee56f32fd192dfe4a15bb9 # v32
+        with:
+          install_url: https://releases.nixos.org/nix/nix-2.34.9/install
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: Install script checking tools
+        run: sudo apt-get update && sudo apt-get install -y jq shellcheck
+      - name: Validate and test
+        run: |
+          for script in scripts/*.sh; do bash -n "$script"; done
+          shellcheck scripts/*.sh
+          nix run --inputs-from . nixpkgs#actionlint -- .github/workflows/build.yml
+          nix flake check --no-write-lock-file
+          python3 tests/build-all.py
+          python3 tests/publish-cache.py
+      - name: Build all packages
+        run: ./scripts/build-all.sh
+
+  publish:
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-24.04
+    environment: nix-cache
+    concurrency:
+      group: nix-cache-publish
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: cachix/install-nix-action@bb0495a1086c46893eee56f32fd192dfe4a15bb9 # v32
+        with:
+          install_url: https://releases.nixos.org/nix/nix-2.34.9/install
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: Install script checking tools
+        run: sudo apt-get update && sudo apt-get install -y jq shellcheck
+      - name: Validate and test
+        run: |
+          for script in scripts/*.sh; do bash -n "$script"; done
+          shellcheck scripts/*.sh
+          nix run --inputs-from . nixpkgs#actionlint -- .github/workflows/build.yml
+          nix flake check --no-write-lock-file
+          python3 tests/build-all.py
+          python3 tests/publish-cache.py
+          nix help-stores > "$RUNNER_TEMP/nix-stores.txt"
+          grep -q 'S3 Binary Cache Store' "$RUNNER_TEMP/nix-stores.txt"
+      - name: Build all packages
+        run: ./scripts/build-all.sh
+      - name: Publish signed runtime closures
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          NIX_CACHE_SIGNING_KEY: ${{ secrets.NIX_CACHE_SIGNING_KEY }}
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          S3_BUCKET: ${{ vars.S3_BUCKET }}
+        run: ./scripts/publish-cache.sh

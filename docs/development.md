@@ -46,9 +46,11 @@ the flake or CI configuration.
 ## Check build automation
 
 ```bash
-bash -n scripts/build-all.sh
-shellcheck scripts/build-all.sh
+for script in scripts/*.sh; do bash -n "$script"; done
+shellcheck scripts/*.sh
 python3 tests/build-all.py
+python3 tests/publish-cache.py
+nix run --inputs-from . nixpkgs#actionlint -- .github/workflows/build.yml
 ```
 
 The integration tests use temporary copies of the flake, the pinned nixpkgs,
@@ -59,4 +61,32 @@ Update the independent nixpkgs pin with `nix flake update nixpkgs`, then rerun
 validation and builds. Dependency changes can change derivation and output paths.
 Commit `flake.lock` with the update.
 
-Publishing and its manual setup are planned for the next stage.
+## Publish manually
+
+Follow [AWS and GitHub setup](aws-setup.md) first. Normal builds never publish.
+For an authorized manual upload, use an interactive shell with tracing disabled:
+
+```bash
+set +x
+read -r -p 'AWS access key ID: ' AWS_ACCESS_KEY_ID
+read -r -s -p 'AWS secret access key: ' AWS_SECRET_ACCESS_KEY
+printf '\n'
+read -r -p 'Region: ' AWS_REGION
+read -r -p 'Bucket name: ' S3_BUCKET
+NIX_CACHE_SIGNING_KEY=$(cat /secure/path/cache-private-key.pem)
+export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_REGION S3_BUCKET NIX_CACHE_SIGNING_KEY
+./scripts/build-all.sh && ./scripts/publish-cache.sh
+unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY NIX_CACHE_SIGNING_KEY
+```
+
+Do not put credentials into committed scripts, command arguments, or shell history.
+The private signing key is supplied as contents, not a filename. Publishing reads
+`OUTPUTS_FILE` with the same default as building, signs entries with a private
+0600 temporary file, deletes the file on exit, and uploads runtime closures.
+Repeated copies skip paths already present. AWS CLI is not needed for publishing.
+
+The publishing tests use generated test keys, a shim translating the copy target
+to a temporary local file cache, and real Nix copy/signature verification in an
+isolated store. They exercise secret handling and closure export without AWS.
+The production script accepts only AWS bucket/region settings, with no alternative
+backend configuration.

@@ -12,8 +12,8 @@ The Nix implementation and its local build acceptance checks are the gate before
 Step 1 is complete. Local validation passed: `nix flake show`, `nix flake check`,
 `nix build .#hello`, the `Hello, world!` greeting, and the exact build-info
 contents. Both the derivation and output paths differ from standard Hello evaluated
-with the same locked nixpkgs input. Step 2 is now complete; GitHub Actions and S3
-work have not started.
+with the same locked nixpkgs input. Steps 2 and 3 are implemented and validated
+locally; external GitHub/AWS setup and live validation remain pending.
 
 ## Package layout revision
 
@@ -51,3 +51,24 @@ temporary-flake integration tests covering discovery, hyphenated names, all
 outputs, repeated execution, addition/removal, ignored entries, empty sets,
 unsupported systems, build/evaluation failures, temporary-file cleanup, and a
 custom manifest path. Usage and requirements are in `docs/development.md`.
+
+## Publishing and CI
+
+Step 3 is implemented. `scripts/publish-cache.sh` validates the manifest and
+configuration, signs native S3 cache entries using a 0600 temporary key, removes
+that key on exit, and recursively copies runtime closures with multipart uploads.
+`.github/workflows/build.yml` installs pinned Nix 2.34.9 through pinned actions.
+PRs and non-main manual runs only validate/build; main pushes and main manual
+runs validate/build/publish using the main-restricted `nix-cache` environment.
+Credentials are scoped to the final publishing step. Environment protection and
+AWS provisioning are manual prerequisites documented in `docs/aws-setup.md`.
+
+Passed locally: all four build tests, all four publishing tests, shell syntax,
+ShellCheck, actionlint, and workflow event/ref condition checks. Publishing tests
+use a local test shim and real Nix binary-cache signing, recursive copying,
+repeat copying, key cleanup, and signature-checked restoration into an isolated
+store. No live S3 uploads, public HTTPS reads, IAM tests, or GitHub runs were
+performed: all five publication environment variables are absent locally.
+The current branch is `master`; operators must establish trusted `main` before
+publication. Remaining work is consumer documentation/README and live setup and
+verification once resources and credentials are available.
