@@ -1,9 +1,16 @@
 # Local development
 
+NixOS includes Nix. On other Linux systems, install Nix using the
+[official installation instructions](https://nixos.org/download/).
+
 Use Nix with `flakes` and `nix-command` enabled, plus Bash and `jq` on PATH.
 For a local Nix installation, add `experimental-features = nix-command flakes`
 to `~/.config/nix/nix.conf`. On NixOS, set
 `nix.settings.experimental-features = [ "nix-command" "flakes" ];` in a module.
+
+To get the local script tools from the pinned nixpkgs, run
+`nix shell --inputs-from . nixpkgs#jq nixpkgs#shellcheck nixpkgs#python3`
+from the repository root.
 
 ## Build packages
 

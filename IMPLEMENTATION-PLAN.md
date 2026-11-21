@@ -70,5 +70,25 @@ repeat copying, key cleanup, and signature-checked restoration into an isolated
 store. No live S3 uploads, public HTTPS reads, IAM tests, or GitHub runs were
 performed: all five publication environment variables are absent locally.
 The current branch is `master`; operators must establish trusted `main` before
-publication. Remaining work is consumer documentation/README and live setup and
-verification once resources and credentials are available.
+publication. Consumer documentation and the README are now complete; live setup
+and verification remain pending resources and credentials.
+
+## Operational documentation
+
+Step 4's local documentation is complete: the README provides the package/build
+overview, and `docs/nixos-integration.md` covers an existing host's flake input,
+independent pinning, cache settings, package updates, troubleshooting, and safe
+isolated-store verification. The development guide also documents installation
+and local tooling.
+
+The documented NixOS example was evaluated against the local flake and pinned
+nixpkgs, using a temporary stand-in host module. Hello and Peek were present in
+systemPackages, the custom public-key setting was present, and the official cache
+key was retained. No NixOS system was built or activated. Documentation links,
+Bash snippet syntax, and a final `nix flake check` passed.
+
+External setup remains pending: there is no Git remote configured, no connected
+GitHub/AWS tool, and no publication environment configuration. Follow
+`docs/aws-setup.md` to provision the dedicated bucket/IAM user, establish trusted
+main, configure the GitHub environment, publish, and verify live HTTPS
+substitution. No live publication or deployment is claimed.
