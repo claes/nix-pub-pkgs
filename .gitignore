@@ -1,0 +1,8 @@
+/result
+/result-*
+*.pem
+*.key
+*.tmp
+*.swp
+.build/
+.direnv/

@@ -122,7 +122,8 @@ nix-packages/
 ├── .gitignore
 │
 ├── packages/
-│   └── hello-custom.nix
+│   └── hello/
+│       └── package.nix
 │
 ├── scripts/
 │   ├── build-all.sh
@@ -202,31 +203,34 @@ Use standard Nix functionality such as:
 - `builtins.listToAttrs`
 - `pkgs.callPackage`
 
-Each regular `.nix` file inside `packages/` should represent one package.
+Each immediate directory inside `packages/` containing a regular `package.nix` file represents one package.
 
-The package name should be derived from its filename.
+The package name should be derived from its directory name.
 
 For example:
 
 ```text
 packages/
-├── hello-custom.nix
-├── foo.nix
-└── bar.nix
+├── hello/
+│   └── package.nix
+├── foo/
+│   └── package.nix
+└── bar/
+    └── package.nix
 ```
 
 Must expose:
 
 ```text
-packages.x86_64-linux.hello-custom
+packages.x86_64-linux.hello
 packages.x86_64-linux.foo
 packages.x86_64-linux.bar
 ```
 
 The implementation must:
 
-- Ignore non-Nix files.
-- Avoid importing directories unexpectedly.
+- Ignore loose files and directories without a regular `package.nix`.
+- Discover only immediate package directories; do not recursively import nested directories.
 - Avoid maintaining a duplicate package registry.
 - Produce understandable evaluation errors for invalid package files.
 - Use `pkgs.callPackage` to evaluate package definitions.
@@ -234,7 +238,7 @@ The implementation must:
 
 Do not hardcode the package names in `flake.nix` if automatic discovery can be implemented cleanly.
 
-For this initial version, support a flat `packages/` directory. Nested package directory conventions are not required.
+Use `packages/<name>/package.nix`, following the Nixpkgs per-package file convention without prefix grouping directories. Supporting files and patches may live alongside `package.nix`.
 
 ### Flake outputs
 
@@ -267,16 +271,16 @@ Do not require an aggregate `default` derivation for CI. Prefer dynamically enum
 Create:
 
 ```text
-packages/hello-custom.nix
+packages/hello/package.nix
 ```
 
 The package should be a customized version of GNU Hello.
 
 ### Requirements
 
-Use the GNU Hello derivation from nixpkgs as the base.
+Define GNU Hello directly with `stdenv.mkDerivation`, fetching a pinned upstream source release with a fixed hash. Do not use `pkgs.hello`, overrides, or an alias as the implementation.
 
-Use `overrideAttrs` to modify its build output in a small but meaningful way.
+Use the standard build phases to configure, compile, test, and install GNU Hello, then add a small deterministic customization.
 
 For example, install an additional file:
 
@@ -296,13 +300,13 @@ Requirements:
 - The resulting store path must differ from the unmodified nixpkgs package.
 - The original GNU Hello executable must continue to work.
 - The customization must be deterministic.
-- Preserve any existing relevant build phases when overriding attributes.
+- Use the standard stdenv build phases and run the upstream test suite.
 - Do not introduce unnecessary build-time dependencies.
 
 The following commands must work:
 
 ```bash
-nix build .#hello-custom
+nix build .#hello
 ./result/bin/hello
 ```
 
@@ -598,7 +602,7 @@ If a specific Nix installation option or package is required for S3 support, con
 The workflow must never contain an explicit package list such as:
 
 ```bash
-nix build .#hello-custom .#another-tool
+nix build .#hello .#another-tool
 ```
 
 Adding a new package must not require workflow modifications.
@@ -905,7 +909,7 @@ Provide a complete example:
         modules = [
           ({ ... }: {
             environment.systemPackages = [
-              my-packages.packages.x86_64-linux.hello-custom
+              my-packages.packages.x86_64-linux.hello
             ];
           })
         ];
@@ -965,7 +969,7 @@ Explain how to configure substituters using a normal NixOS module in an existing
 Show how to add:
 
 ```nix
-my-packages.packages.x86_64-linux.hello-custom
+my-packages.packages.x86_64-linux.hello
 ```
 
 To:
@@ -1065,7 +1069,7 @@ Explain how to install or enable:
 ### Build GNU Hello
 
 ```bash
-nix build .#hello-custom
+nix build .#hello
 ./result/bin/hello
 ```
 
@@ -1081,7 +1085,7 @@ Document the exact procedure.
 
 For example:
 
-1. Create `packages/my-tool.nix`.
+1. Create `packages/my-tool/package.nix`.
 2. Define a valid Nix derivation.
 3. Run `nix flake show`.
 4. Run `nix build .#my-tool`.
@@ -1164,7 +1168,7 @@ Succeeds.
 Verify:
 
 ```bash
-nix build .#hello-custom
+nix build .#hello
 ./result/bin/hello
 ```
 
@@ -1255,7 +1259,7 @@ The project is complete only when the following conditions are met.
 
 ### Packages
 
-- [ ] `.#hello-custom` builds successfully.
+- [ ] `.#hello` builds successfully.
 - [ ] GNU Hello runs correctly.
 - [ ] The example contains a deterministic customization.
 - [ ] Its derivation differs from standard GNU Hello.
@@ -1401,7 +1405,7 @@ Summarize the required manual steps:
 Provide a minimal example showing:
 
 - The custom packages flake input.
-- Installation of `hello-custom`.
+- Installation of `hello`.
 - Configuration of the S3 substituter.
 - Configuration of the signing public key.
 - Updating the package repository flake input.
@@ -1423,7 +1427,7 @@ List any known issues, compromises or operational considerations.
 
 The final system must support this workflow without any manual package enumeration:
 
-1. A developer adds a new `.nix` package definition under `packages/`.
+1. A developer adds `packages/<name>/package.nix`.
 2. The flake automatically exposes it.
 3. The developer commits and pushes to `main`.
 4. GitHub Actions discovers and builds all custom packages.
