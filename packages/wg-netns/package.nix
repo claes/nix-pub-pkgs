@@ -36,12 +36,13 @@ python3.pkgs.buildPythonApplication rec {
   '';
 
   makeWrapperArgs = [
-    ''--prefix PATH : "${
-      lib.makeBinPath [
-        iproute2
-        wireguard-tools
-      ]
-    }"''
+    "--prefix"
+    "PATH"
+    ":"
+    (lib.makeBinPath [
+      iproute2
+      wireguard-tools
+    ])
   ];
 
   meta = with lib; {
