@@ -609,6 +609,8 @@ All builds must be driven through the package discovery mechanism and build scri
 
 ---
 
+Cache verification utilities should accept the cache HTTPS URL, bucket, region, public key, and an optional store path or AWS CLI profile. Keep anonymous-write checks explicit because a misconfigured bucket could accept and retain the probe object. Provide a separate utility that checks and runs GNU Hello using the cache and public key.
+
 ## 9. AWS setup documentation
 
 Include the following AWS steps in the consolidated guide:

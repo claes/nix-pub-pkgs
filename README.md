@@ -31,6 +31,8 @@ flake.nix / flake.lock        Independent nixpkgs pin and discovery
 packages/<name>/package.nix   One derivation per package directory
 scripts/build-all.sh          Build and record all outputs
 scripts/publish-cache.sh      Sign and upload runtime closures to AWS S3
+scripts/verify-cache.sh       Check S3 objects and signed closure
+scripts/run-cached-hello.sh   Build Hello using the cache, then run it
 .github/workflows/build.yml   PR validation and trusted-master publication
 tests/                       Local build and signed-cache integration tests
 docs/setup.md                Complete ordered setup and operations guide

@@ -283,6 +283,11 @@ local validation.
 
 ## 9. Verify the published cache
 
+The scripts `scripts/verify-cache.sh` and `scripts/run-cached-hello.sh` automate
+the object, signature, closure, and Hello checks below. They require `aws`, `curl`,
+`jq`, and `nix` for verification; the Hello runner needs `curl` and `nix`. Run
+`--help` for the argument list.
+
 Uploads use authenticated
 `s3://BUCKET_NAME?region=REGION&secret-key=TEMPORARY_KEY_FILE`; consumers use
 `https://BUCKET_NAME.s3.REGION.amazonaws.com` without AWS credentials. For example:
@@ -292,50 +297,48 @@ Use the bucket's real region; do not use S3 website endpoints.
 After a successful master publication, from the package repository checked out at the same commit as the successful workflow:
 
 ```bash
-export AWS_REGION=eu-north-1
-export S3_BUCKET=my-nix-binary-cache
-cache="https://${S3_BUCKET}.s3.${AWS_REGION}.amazonaws.com"
-aws s3 ls "s3://${S3_BUCKET}/" --recursive --profile nix-cache-publisher
-curl -f "$cache/nix-cache-info"
-hello_path=$(nix eval --raw .#hello.outPath)
-store_hash=${hello_path##*/}
-store_hash=${store_hash%%-*}
-curl -f "$cache/$store_hash.narinfo" -o /tmp/hello.narinfo
-cat /tmp/hello.narinfo
-grep '^Sig: my-nix-cache-1:' /tmp/hello.narinfo
-nar=$(sed -n 's/^URL: //p' /tmp/hello.narinfo)
-curl -fI "$cache/$nar"
+./scripts/verify-cache.sh \
+  --cache-url https://my-nix-binary-cache.s3.eu-north-1.amazonaws.com \
+  --bucket my-nix-binary-cache \
+  --region eu-north-1 \
+  --aws-profile nix-cache-publisher \
+  --public-key 'my-nix-cache-1:REPLACE_WITH_FULL_PUBLIC_KEY'
 ```
 
-Check `StorePath`, `References`, and `Sig` in the narinfo. Presence of `Sig` alone
-is not cryptographic verification: test a signature-checked restore too:
+The utility lists objects through the selected AWS CLI profile, fetches
+`nix-cache-info` and the Hello narinfo anonymously, checks the path and signature
+name, verifies that the NAR is downloadable, then restores and cryptographically
+verifies the closure in an isolated temporary store. It removes that temporary
+store on exit.
+
+To test anonymous writes, explicitly add `--check-anonymous-write`. This sends a
+PUT request for a unique probe object. If S3 accepts it, the script reports a
+security failure and prints the key so an administrator can remove the object;
+the publisher account intentionally has no delete permission. Without this flag,
+the script makes no writes to S3.
+
+You can provide a specific store path to inspect a different published package:
 
 ```bash
-verify_root=$(mktemp -d)
-public_key='my-nix-cache-1:REPLACE_WITH_FULL_PUBLIC_KEY'
-nix copy --from "$cache" --to "local?root=$verify_root" \
-  --option trusted-public-keys "$public_key" "$hello_path"
-nix store verify --store "local?root=$verify_root" --all --sigs-needed 1 \
-  --option trusted-public-keys "$public_key"
+./scripts/verify-cache.sh --cache-url https://my-nix-binary-cache.s3.eu-north-1.amazonaws.com \
+  --bucket my-nix-binary-cache --region eu-north-1 \
+  --public-key 'my-nix-cache-1:REPLACE_WITH_FULL_PUBLIC_KEY' \
+  --store-path /nix/store/STORE_HASH-package-version
 ```
 
-This uses an isolated store and leaves production store paths intact. Remove the
-temporary directory after inspection. The HTTP download also exercises runtime
-closure availability. The local test suite performs the same kind of restore
-against a signed file cache; that does not verify AWS access or public HTTPS.
-
-Confirm unsigned writes are denied using a unique harmless probe object:
+Run Hello using the custom cache as an additional substituter:
 
 ```bash
-probe="anonymous-write-probe-$(date +%s)"
-status=$(curl -sS -o /tmp/nix-cache-probe-response -w '%{http_code}' \
-  -X PUT --data 'public writes must be denied' "$cache/$probe")
-test "$status" = 403
+./scripts/run-cached-hello.sh \
+  --cache-url https://my-nix-binary-cache.s3.eu-north-1.amazonaws.com \
+  --public-key 'my-nix-cache-1:REPLACE_WITH_FULL_PUBLIC_KEY'
 ```
 
-A 2xx status means anonymous writes are enabled: immediately fix bucket policies
-and remove the probe through an administrator. The publisher has no delete rights.
-A network error is not evidence of access denial.
+It checks that this repository's exact `.#hello` store path is signed and
+available from the cache, adds that cache and key to Nix for the build, then runs
+the resulting program. If the path is already in the active store, Nix may reuse
+it without a network download. To observe a fresh download, use a machine where
+that output is absent; do not delete paths from a production store.
 
 403 reads can mean account-level public access blocking, a bad policy, or a
 missing object when anonymous listing is denied. Check authenticated object

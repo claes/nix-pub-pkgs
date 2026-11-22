@@ -97,3 +97,14 @@ substitution. No live publication or deployment is claimed.
 All setup and development instructions now live in `docs/setup.md`, ordered from
 local builds through AWS, GitHub, publication checks, and NixOS consumption.
 The former split guides have been removed. The README links to the single guide.
+
+
+## Cache verification utilities
+
+Added `scripts/verify-cache.sh` to list S3 objects with an AWS CLI profile,
+check anonymous cache metadata and narinfo/NAR downloads, and verify the signed
+runtime closure in an isolated store. The anonymous PUT check is opt-in because
+it can create a probe object if public writes are enabled. Added
+`scripts/run-cached-hello.sh` to check the published Hello path, add the cache and
+public key to Nix's configured substituters, and run Hello. Both are documented in
+step 9 of `docs/setup.md`.
